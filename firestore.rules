@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'elleniconoclust@gmail.com';
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- User Profile Rules ---
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && 
+        (incoming().role == 'user' || (incoming().role == 'admin' && request.auth.token.email == 'elleniconoclust@gmail.com')) && 
+        incoming().email == request.auth.token.email;
+      allow update: if isOwner(userId) && 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['username', 'acceptedPolicies']) || isAdmin());
+    }
+
+    // --- Prompts Rules ---
+    match /prompts/{promptId} {
+      // Get: allow if public, or if owner, or if admin
+      allow get: if (existing().accepted == true) || (isSignedIn() && existing().userId == request.auth.uid) || isAdmin();
+      
+      // List: Admins see all, others see accepted or their own
+      allow list: if isAdmin() || (existing().accepted == true) || (isSignedIn() && existing().userId == request.auth.uid);
+
+      allow create: if isEmailVerified() && 
+        incoming().userId == request.auth.uid &&
+        (incoming().accepted == false || isAdmin()) &&
+        incoming().isTrending == false &&
+        incoming().createdAt == request.time;
+        
+      allow update: if isAdmin() || (
+        isOwner(existing().userId) && 
+        !existing().accepted &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'tagline', 'model', 'text', 'image_url'])
+      ) || (
+        // Action: Like/Unlike (simplified for demo, typically needs better guard)
+        isSignedIn() && 
+        incoming().diff(existing()).affectedKeys().hasOnly(['likes']) &&
+        (incoming().likes == existing().get('likes', 0) + 1 || incoming().likes == existing().get('likes', 0) - 1)
+      );
+      
+      allow delete: if isAdmin() || (isOwner(existing().userId) && !existing().accepted);
+    }
+
+    // --- Likes Rules ---
+    match /users/{userId}/likedPrompts/{promptId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // --- Stats Rules ---
+    match /stats/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
