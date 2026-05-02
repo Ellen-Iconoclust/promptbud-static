@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Prompt": {
+      "title": "AI Prompt",
+      "description": "An AI generation prompt submitted by a user",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "tagline": { "type": "string" },
+        "model": { "type": "string" },
+        "text": { "type": "string" },
+        "image_url": { "type": "string" },
+        "username": { "type": "string" },
+        "userId": { "type": "string" },
+        "accepted": { "type": "boolean" },
+        "isTrending": { "type": "boolean" },
+        "likes": { "type": "number", "default": 0 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "text", "userId", "username", "createdAt"]
+    },
+    "User": {
+      "title": "Platform User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "acceptedPolicies": { "type": "boolean" }
+      },
+      "required": ["username", "email", "role"]
+    },
+    "Stats": {
+      "title": "Global Stats",
+      "description": "Aggregated platform statistics",
+      "type": "object",
+      "properties": {
+        "total_prompts": { "type": "number" },
+        "total_users": { "type": "number" },
+        "categories": { "type": "number" },
+        "accepted_prompts": { "type": "number" },
+        "pending_prompts": { "type": "number" },
+        "trending_prompts": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "prompts/{promptId}": {
+      "schema": "Prompt",
+      "description": "Collection of all submitted prompts"
+    },
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "users/{userId}/likedPrompts/{promptId}": {
+      "schema": { "type": "object", "properties": { "likedAt": { "type": "string", "format": "date-time" } } },
+      "description": "Subcollection of prompts liked by the user"
+    },
+    "stats/global": {
+      "schema": "Stats",
+      "description": "Global statistics document"
+    }
+  }
+}
