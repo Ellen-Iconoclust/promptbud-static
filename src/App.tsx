@@ -980,7 +980,7 @@ const AppContent: React.FC = () => {
       >
         <div className="max-w-[800px] mx-auto text-center py-5">
           <h2 className="text-3xl font-bold mb-4">Welcome to PromptBud</h2>
-          <div className="inline-block bg-[#FF7B65] text-white px-4 py-2 rounded-full font-bold text-sm mb-8 shadow-md">Version: Alpha_05.00</div>
+          <div className="inline-block bg-[#FF7B65] text-white px-4 py-2 rounded-full font-bold text-sm mb-8 shadow-md">Version: Release Candidate Alpha_05.00</div>
           <div className="text-left space-y-6 text-muted text-lg leading-relaxed">
             <p>PromptBud is a revolutionary platform designed for AI enthusiasts, prompt engineers, and creative minds to discover, share, and collaborate on the most effective AI prompts. In the rapidly evolving world of artificial intelligence, the quality of prompts determines the quality of outputs. PromptBud serves as a centralized hub where the community can contribute their most successful prompts across various AI models including ChatGPT, Midjourney, DALL-E, Stable Diffusion, and more.</p>
             <p>Our mission is to democratize access to high-quality AI prompts and foster a community where both beginners and experts can learn from each other. Whether you're looking to generate stunning visual art, craft compelling stories, solve complex problems, or simply explore the capabilities of modern AI systems, PromptBud provides the tools and community support to help you achieve your creative goals.</p>
