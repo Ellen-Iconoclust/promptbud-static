@@ -733,8 +733,8 @@ const AppContent: React.FC = () => {
         <div className="max-w-[1200px] mx-auto px-5 text-center text-muted text-sm">
           <div>&copy; 2026 PromptBud — by <a href="https://coderonins.vercel.app" className="text-[#FF7B65] hover:text-[#A46BF5]" target="_blank" rel="noreferrer">Code Ronins</a></div>
           <div className="flex justify-center gap-6 mt-4">
-            <button onClick={() => setActiveModal('about')} className="hover:text-[#FF7B65] transition-colors">Terms & Conditions</button>
-            <button onClick={() => setActiveModal('about')} className="hover:text-[#FF7B65] transition-colors">Privacy Policy</button>
+            <button onClick={() => setActiveModal('terms')} className="hover:text-[#FF7B65] transition-colors">Terms & Conditions</button>
+            <button onClick={() => setActiveModal('privacy')} className="hover:text-[#FF7B65] transition-colors">Privacy Policy</button>
           </div>
           <div className="mt-4 text-sm">Made with ♥</div>
         </div>
@@ -990,6 +990,106 @@ const AppContent: React.FC = () => {
           <div className="mt-12 px-12 py-5 bg-white rounded-2xl shadow-sm border border-black/5 inline-block">
             <h3 className="font-space font-bold text-xl text-[#FF7B65]">Ellen Iconoclust</h3>
             <p className="text-base text-muted">Lead Developer @ Code Ronins</p>
+          </div>
+        </div>
+      </ModalPage>
+
+      <ModalPage 
+        isOpen={activeModal === 'terms'} 
+        onClose={() => setActiveModal(null)} 
+        title="Terms & Conditions"
+      >
+        <div className="max-w-[800px] mx-auto py-5">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+            <p className="text-muted mb-6">Last Updated: May 2026</p>
+            
+            <div className="space-y-8 text-muted leading-relaxed">
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">1. Acceptance of Terms</h3>
+                <p>By accessing and using PromptBud, you accept and agree to be bound by the terms and provision of this agreement. Additionally, when using this website's particular services, you shall be subject to any posted guidelines or rules applicable to such services.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">2. User Accounts</h3>
+                <p>When you create an account with us, you guarantee that information you provide is accurate, complete, and current at all times. You are responsible for safeguarding the password that you use to access the service and for any activities or actions under your password.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">3. Content Policy</h3>
+                <p>Users may submit prompts and images to the platform. By submitting content, you grant PromptBud a worldwide, non-exclusive, royalty-free license to use, reproduce, adapt, and display such content on our platform. You retain ownership of your original content.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">4. Intellectual Property</h3>
+                <p>The PromptBud platform and its original content, features, and functionality are owned by Code Ronins and are protected by international copyright, trademark, patent, trade secret, and other intellectual property or proprietary rights laws.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">5. Termination</h3>
+                <p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">6. Changes to Terms</h3>
+                <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. By continuing to access or use our service after those revisions become effective, you agree to be bound by the revised terms.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </ModalPage>
+
+      <ModalPage 
+        isOpen={activeModal === 'privacy'} 
+        onClose={() => setActiveModal(null)} 
+        title="Privacy Policy"
+      >
+        <div className="max-w-[800px] mx-auto py-5">
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-black/5">
+            <p className="text-muted mb-6">Last Updated: May 2026</p>
+            
+            <div className="space-y-8 text-muted leading-relaxed">
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">1. Information We Collect</h3>
+                <p>We collect information that you provide directly to us, including username, email address, password, and any prompts or images you submit to the platform.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">2. How We Use Your Information</h3>
+                <p>We use the information we collect to:</p>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  <li>Provide, maintain, and improve our services</li>
+                  <li>Process transactions and send related information</li>
+                  <li>Send you technical notices and support messages</li>
+                  <li>Respond to your comments and questions</li>
+                  <li>Monitor and analyze trends and usage</li>
+                </ul>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">3. Information Sharing</h3>
+                <p>We do not sell, trade, or rent your personal identification information to others. We may share generic aggregated demographic information not linked to any personal identification information regarding visitors and users with our business partners and advertisers.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">4. Data Security</h3>
+                <p>We implement appropriate security measures to protect against unauthorized access, alteration, disclosure, or destruction of your personal information and data stored on our platform.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">5. Cookies</h3>
+                <p>PromptBud uses cookies to enhance user experience. Your web browser places cookies on your hard drive for record-keeping purposes and sometimes to track information about them.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">6. Your Rights</h3>
+                <p>You have the right to access, correct, or delete your personal information. You can update your account information through your account settings or contact us directly.</p>
+              </section>
+
+              <section>
+                <h3 className="text-xl font-bold text-[#333] mb-3">7. Changes to This Policy</h3>
+                <p>We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the "Last Updated" date.</p>
+              </section>
+            </div>
           </div>
         </div>
       </ModalPage>
