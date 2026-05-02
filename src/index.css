@@ -1,0 +1,221 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-space: "Space Grotesk", sans-serif;
+}
+
+:root {
+  --bg: #f6efe9;
+  --card: #ffffff;
+  --muted: #7a7a8c;
+  --accent: #FF7B65; /* coral */
+  --accent-2: #ffd9c8;
+  --hover-purple: #A46BF5; /* your purple */
+  --glass: rgba(255,255,255,0.7);
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(20,20,30,0.06);
+  --max-w: 1200px;
+  --accent-darker: #ff6040;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: radial-gradient(circle at 20% 20%, rgba(255,235,230,0.6), transparent 10%),
+              radial-gradient(circle at 80% 70%, rgba(240,235,255,0.4), transparent 12%),
+              var(--bg);
+  color: #222;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-40px) scale(1.05) rotate(5deg);
+  }
+  50% {
+    transform: translateY(20px) scale(0.95) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(-20px) scale(1.02) rotate(3deg);
+  }
+}
+
+.fade-in {
+  opacity: 1 !important; /* Ensure visibility for cards */
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* Blur Blobs */
+.blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.2;
+  z-index: -1;
+  animation: float 25s infinite ease-in-out;
+  pointer-events: none;
+}
+
+.blob-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, var(--accent), var(--hover-purple));
+  top: 10%;
+  left: 5%;
+  animation-delay: 0s;
+}
+.blob-2 {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, var(--hover-purple), var(--accent-2));
+  bottom: 15%;
+  right: 8%;
+  animation-delay: -5s;
+}
+.blob-3 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  top: 40%;
+  right: 15%;
+  animation-delay: -10s;
+}
+.blob-4 {
+  width: 450px;
+  height: 450px;
+  background: linear-gradient(135deg, var(--accent-2), var(--hover-purple));
+  bottom: 25%;
+  left: 10%;
+  animation-delay: -15s;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Modal Page Overlay Styles */
+.modal-page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  z-index: 1000;
+  overflow-y: auto;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.modal-page.active {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Auth Modal Backdrop */
+.modal-backdrop {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10,10,12,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+/* Tic Tac Toe Grid */
+.tictactoe-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin: 20px auto;
+  width: 240px;
+  height: 240px;
+}
+
+.tictactoe-cell {
+  width: 80px;
+  height: 80px;
+  background: #f8f9fa;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tictactoe-cell.x {
+  color: var(--accent);
+}
+.tictactoe-cell.o {
+  color: var(--hover-purple);
+}
+
+/* Image Viewer Modal */
+.image-viewer-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.image-viewer-modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
