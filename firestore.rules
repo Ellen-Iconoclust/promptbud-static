@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isEmailVerified() && request.auth.token.email == 'elleniconoclust@gmail.com';
+      return isSignedIn() && request.auth.token.email == 'elleniconoclust@gmail.com';
     }
 
     function isOwner(userId) {
@@ -82,7 +82,14 @@ service cloud.firestore {
     // --- Stats Rules ---
     match /stats/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow update: if (isAdmin() || (
+        docId == 'global' &&
+        isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['total_users']) &&
+        incoming().total_users == existing().get('total_users', 0) + 1
+      )) && isValidId(docId);
+      allow create: if isAdmin() && isValidId(docId);
+      allow delete: if isAdmin() && isValidId(docId);
     }
   }
 }
