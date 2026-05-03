@@ -3,6 +3,43 @@ import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { auth, db, signInWithGoogle } from '../lib/firebase';
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 interface AuthContextType {
   user: User | null;
   profile: any | null;
@@ -35,7 +72,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             acceptedPolicies: true, // Defaulting for simple flow
             createdAt: new Date().toISOString()
           };
-          await setDoc(doc(db, 'users', user.uid), newProfile);
+          
+          try {
+            await setDoc(doc(db, 'users', user.uid), newProfile);
+          } catch (err) {
+            handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
+          }
           
           // Increment user count in global stats
           try {
@@ -44,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             });
           } catch (err) {
             console.error('Failed to update total_users in global stats:', err);
+            // We don't throw here to avoid blocking login if stats update fails
+            // but we log it for the user to see the permission fix worked
           }
 
           setProfile(newProfile);
