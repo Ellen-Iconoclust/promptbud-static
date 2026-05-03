@@ -1,10 +1,10 @@
 {
-  "projectId": "gen-lang-client-0403322916",
-  "appId": "1:423366063143:web:aec99fa78755bda1b00a02",
-  "apiKey": "AIzaSyAa7yPpMej0XUkZN10CY7bcpWJnU9NEePA",
-  "authDomain": "gen-lang-client-0403322916.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-396942ce-16df-4038-9d3e-7c46688d4299",
-  "storageBucket": "gen-lang-client-0403322916.firebasestorage.app",
-  "messagingSenderId": "423366063143",
+  "projectId": "promptbud-81ce9",
+  "appId": "1:607827218510:web:e78dbe3543d8b652d7b31f",
+  "apiKey": "AIzaSyCS34n_hMR5ddC5mUB92IhRn6fe08E58gs",
+  "authDomain": "promptbud-81ce9.firebaseapp.com",
+  "firestoreDatabaseId": "promptbud",
+  "storageBucket": "promptbud-81ce9.firebasestorage.app",
+  "messagingSenderId": "607827218510",
   "measurementId": ""
 }
