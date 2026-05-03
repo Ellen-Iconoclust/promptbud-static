@@ -34,6 +34,7 @@ import {
   writeBatch,
   increment,
   getDoc,
+  getDocs,
   setDoc
 } from 'firebase/firestore';
 import { db } from './lib/firebase';
@@ -351,6 +352,29 @@ const AppContent: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        const file = items[i].getAsFile();
+        if (file) {
+          if (file.size > 800 * 1024) {
+            alert('Pasted image too large. Max 800KB.');
+            return;
+          }
+          setUploadProgress(true);
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            setForm(prev => ({ ...prev, image_url: event.target?.result as string }));
+            setUploadProgress(false);
+            showMessage('Image pasted from clipboard!');
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    }
+  };
+
   // Easter Egg States
   const [logoClicks, setLogoClicks] = useState(0);
   const [starPlacerActive, setStarPlacerActive] = useState(false);
@@ -399,7 +423,24 @@ const AppContent: React.FC = () => {
     return unsub;
   }, [loading]);
 
-  // Fetch Prompts
+  // Admin only: Watch users collection to keep total_users in sync
+  useEffect(() => {
+    if (loading || !isAdmin || user?.email !== 'elleniconoclust@gmail.com') return;
+    
+    const unsub = onSnapshot(collection(db, 'users'), async (snapshot) => {
+      try {
+        await setDoc(doc(db, 'stats', 'global'), {
+          total_users: snapshot.size
+        }, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, 'write', 'stats/global');
+      }
+    });
+    
+    return unsub;
+  }, [loading, isAdmin, user]);
+
+  // Fetch Prompts & Sync Stats (Admin Only)
   useEffect(() => {
     if (loading) return;
 
@@ -410,47 +451,38 @@ const AppContent: React.FC = () => {
       q = query(collection(db, 'prompts'), where('accepted', '==', true), orderBy('createdAt', 'desc'));
     }
 
-    const unsub = onSnapshot(q, (snapshot) => {
+    const unsub = onSnapshot(q, async (snapshot) => {
       const pData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prompt));
       setPrompts(pData);
       
-      const accepted = pData.filter(p => p.accepted);
-      const pending = pData.filter(p => !p.accepted);
-      const trending = pData.filter(p => p.isTrending && p.accepted);
-      
-      setStats(prev => ({
-        ...prev,
-        total_prompts: pData.length,
-        accepted_prompts: accepted.length,
-        pending_prompts: pending.length,
-        trending_prompts: trending.length
-      }));
+      // Sync all stats to global document (Admin Only)
+      if (isAdmin && user?.email === 'elleniconoclust@gmail.com') {
+        try {
+          const accepted = pData.filter(p => p.accepted);
+          const pending = pData.filter(p => !p.accepted);
+          const trending = pData.filter(p => p.isTrending && p.accepted);
+          // Categories logic
+          const uniqueModels = new Set(pData.map(p => p.model.trim().toLowerCase())).size;
+          
+          await setDoc(doc(db, 'stats', 'global'), {
+            total_prompts: pData.length,
+            accepted_prompts: accepted.length,
+            pending_prompts: pending.length,
+            trending_prompts: trending.length,
+            categories: uniqueModels > 0 ? uniqueModels : 8
+          }, { merge: true });
+        } catch (err) {
+          handleFirestoreError(err, 'write', 'stats/global');
+        }
+      }
     }, (err) => {
       handleFirestoreError(err, 'list', 'prompts');
     });
     return unsub;
-  }, [loading, isAdmin]);
+  }, [loading, isAdmin, user]);
 
   // Fetch My Pending Prompts (specifically for the owner to see their own drafts)
   const [myPendingPrompts, setMyPendingPrompts] = useState<Prompt[]>([]);
-
-  // Real-time Total Users Count Sync (Admin Only)
-  useEffect(() => {
-    if (loading || !isAdmin || !user) return;
-    
-    // Check if user matches the admin email in rules for safety
-    if (user.email !== 'elleniconoclust@gmail.com') return;
-
-    const unsub = onSnapshot(collection(db, 'users'), (snapshot) => {
-      // Sync the true count to global stats
-      updateDoc(doc(db, 'stats', 'global'), {
-        total_users: snapshot.size
-      }).catch(err => handleFirestoreError(err, 'write', 'stats/global'));
-    }, (err) => {
-      handleFirestoreError(err, 'list', 'users');
-    });
-    return unsub;
-  }, [loading, isAdmin, user]);
 
   useEffect(() => {
     if (loading || !user || isAdmin) {
@@ -691,7 +723,7 @@ const AppContent: React.FC = () => {
 
           <div className="mt-12 sm:mt-14 grid grid-cols-3 gap-3 sm:gap-6 md:gap-8 justify-center max-w-[1000px] mx-auto px-2">
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.05)] border border-black/5 hover:border-[#FF7B65]/20 transition-all hover:scale-[1.02]">
-              <h3 className="text-[#FF7B65] text-2xl md:text-3xl font-bold tracking-tight">{stats.total_prompts}</h3>
+              <h3 className="text-[#FF7B65] text-2xl md:text-3xl font-bold tracking-tight">{stats.accepted_prompts}</h3>
               <p className="text-muted text-[10px] sm:text-xs font-bold uppercase tracking-[0.1em] mt-1 md:mt-2">Prompts</p>
             </div>
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.05)] border border-black/5 hover:border-[#FF7B65]/20 transition-all hover:scale-[1.02]">
@@ -791,7 +823,7 @@ const AppContent: React.FC = () => {
                     <h4 className="font-space font-bold text-lg mb-1.5">Submit Prompt</h4>
                     <p className="text-muted text-sm mb-4">Enter prompt details and upload an image</p>
                     
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onPaste={handlePaste} onSubmit={handleSubmit} className="space-y-4">
                       <div>
                         <label className="text-sm font-semibold mb-1.5 block">Prompt Title *</label>
                         <input 
@@ -867,7 +899,7 @@ const AppContent: React.FC = () => {
                             ) : (
                               <ImageIcon className="w-12 h-12 mx-auto text-gray-400 group-hover:text-[#FF7B65] mb-2" />
                             )}
-                            <p className="text-muted text-sm font-medium">Click to upload or drag and drop</p>
+                            <p className="text-muted text-sm font-medium">Click to upload, drag and drop, or Paste</p>
                             <p className="text-[10px] text-gray-400 mt-1">PNG, JPG, GIF up to 800KB</p>
                           </>
                         )}
@@ -980,7 +1012,7 @@ const AppContent: React.FC = () => {
       >
         <div className="max-w-[800px] mx-auto text-center py-5">
           <h2 className="text-3xl font-bold mb-4">Welcome to PromptBud</h2>
-          <div className="inline-block bg-[#FF7B65] text-white px-4 py-2 rounded-full font-bold text-sm mb-8 shadow-md">Version: Release Candidate Alpha_05.00</div>
+          <div className="inline-block bg-[#FF7B65] text-white px-4 py-2 rounded-full font-bold text-sm mb-8 shadow-md">Version: Alpha_04.00</div>
           <div className="text-left space-y-6 text-muted text-lg leading-relaxed">
             <p>PromptBud is a revolutionary platform designed for AI enthusiasts, prompt engineers, and creative minds to discover, share, and collaborate on the most effective AI prompts. In the rapidly evolving world of artificial intelligence, the quality of prompts determines the quality of outputs. PromptBud serves as a centralized hub where the community can contribute their most successful prompts across various AI models including ChatGPT, Midjourney, DALL-E, Stable Diffusion, and more.</p>
             <p>Our mission is to democratize access to high-quality AI prompts and foster a community where both beginners and experts can learn from each other. Whether you're looking to generate stunning visual art, craft compelling stories, solve complex problems, or simply explore the capabilities of modern AI systems, PromptBud provides the tools and community support to help you achieve your creative goals.</p>
