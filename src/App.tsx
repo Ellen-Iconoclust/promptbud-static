@@ -20,6 +20,7 @@ import {
   Heart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import confetti from 'canvas-confetti';
 import { 
   collection, 
   query, 
@@ -381,6 +382,7 @@ const AppContent: React.FC = () => {
   const [stars, setStars] = useState<{ x: number; y: number; id: number }[]>([]);
   const [showTTT, setShowTTT] = useState(false);
   const [isBookUnlocked, setIsBookUnlocked] = useState(false);
+  const [isConfettiUnlocked, setIsConfettiUnlocked] = useState(false);
   const [tttBoard, setTTTBoard] = useState(Array(9).fill(''));
   const [tttPlayer, setTTTPlayer] = useState<'X' | 'O'>('X');
   const [tttStatus, setTTTStatus] = useState("Player X's turn");
@@ -390,6 +392,10 @@ const AppContent: React.FC = () => {
     if (searchQuery === '\\c0d3:bud') {
       setIsBookUnlocked(true);
       showMessage('Easter Egg Unlocked! Look at the bottom left.');
+    }
+    if (searchQuery === '*pr0mpt-rnal5') {
+      setIsConfettiUnlocked(true);
+      showMessage('Confetti Easter Egg Unlocked! Look at the bottom left.');
     }
   }, [searchQuery]);
 
@@ -622,6 +628,24 @@ const AppContent: React.FC = () => {
       showMessage('Star Placer Activated! Click anywhere.');
     }
     setTimeout(() => setLogoClicks(0), 2000);
+  };
+
+  const handleConfettiClick = () => {
+    const corners = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 1, y: 1 },
+      { x: 0.5, y: 0.5 }
+    ];
+    const randomCorner = corners[Math.floor(Math.random() * corners.length)];
+    
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: randomCorner,
+      colors: ['#FF7B65', '#A46BF5', '#ffd9c8', '#ffffff']
+    });
   };
 
   const placeStar = (e: React.MouseEvent) => {
@@ -1265,6 +1289,29 @@ const AppContent: React.FC = () => {
               onClick={() => setShowTTT(true)}
             >
               <BookOpen className="w-8 h-8 text-[#FF7B65]" />
+            </div>
+          </motion.div>
+        )}
+
+        {isConfettiUnlocked && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 20 }}
+            className="fixed bottom-5 left-24 z-[9999] flex flex-col items-center gap-2"
+          >
+            <button 
+              onClick={() => setIsConfettiUnlocked(false)}
+              className="bg-red-500 text-white p-1 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+              title="Hide Confetti"
+            >
+              <X className="w-3 h-3" />
+            </button>
+            <div 
+              className="bg-white p-3 rounded-full shadow-xl cursor-pointer hover:scale-110 transition-transform border border-[#A46BF5]" 
+              onClick={handleConfettiClick}
+            >
+              <Plus className="w-8 h-8 text-[#A46BF5]" />
             </div>
           </motion.div>
         )}
