@@ -17,7 +17,9 @@ import {
   Trash2,
   Image as ImageIcon,
   BookOpen,
-  Heart
+  Heart,
+  PartyPopper,
+  HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -72,6 +74,7 @@ const Toast: React.FC<{ message: string; visible: boolean }> = ({ message, visib
   <AnimatePresence>
     {visible && (
       <motion.div 
+        key="toast-notification"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
@@ -94,6 +97,7 @@ const ModalPage: React.FC<{
   if (!isOpen) return null;
   return (
     <motion.div 
+      key={`modal-${title.toLowerCase().replace(/\s+/g, '-')}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
@@ -379,14 +383,41 @@ const AppContent: React.FC = () => {
   // Easter Egg States
   const [logoClicks, setLogoClicks] = useState(0);
   const [starPlacerActive, setStarPlacerActive] = useState(false);
+  const [showLogoSecretModal, setShowLogoSecretModal] = useState(false);
   const [stars, setStars] = useState<{ x: number; y: number; id: number }[]>([]);
   const [showTTT, setShowTTT] = useState(false);
   const [isBookUnlocked, setIsBookUnlocked] = useState(false);
   const [isConfettiUnlocked, setIsConfettiUnlocked] = useState(false);
+  const [showConfettiMessage, setShowConfettiMessage] = useState(false);
   const [tttBoard, setTTTBoard] = useState(Array(9).fill(''));
   const [tttPlayer, setTTTPlayer] = useState<'X' | 'O'>('X');
   const [tttStatus, setTTTStatus] = useState("Player X's turn");
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Rick Roll Easter Egg Tracking
+  const [submitAccessCount, setSubmitAccessCount] = useState(0);
+  const [lastSubmitAccessTime, setLastSubmitAccessTime] = useState(0);
+  const [showRickQuestion, setShowRickQuestion] = useState(false);
+  const [showRickPage, setShowRickPage] = useState(false);
+  const RICK_IMAGE = "/src/assets/images/rickroll_buddy_1778482977906.png";
+
+  const handleOpenSubmit = () => {
+    const now = Date.now();
+    const isFast = now - lastSubmitAccessTime < 3000;
+    
+    let newCount = isFast ? submitAccessCount + 1 : 1;
+    setSubmitAccessCount(newCount);
+    setLastSubmitAccessTime(now);
+
+    if (newCount === 6) {
+      if (Math.random() < 0.8) {
+        setShowRickQuestion(true);
+      }
+      setSubmitAccessCount(0); 
+    }
+
+    setActiveModal('submit');
+  };
 
   useEffect(() => {
     if (searchQuery === '\\c0d3:bud') {
@@ -395,6 +426,7 @@ const AppContent: React.FC = () => {
     }
     if (searchQuery === '*pr0mpt-rnal5') {
       setIsConfettiUnlocked(true);
+      setShowConfettiMessage(true);
       showMessage('Confetti Easter Egg Unlocked! Look at the bottom left.');
     }
   }, [searchQuery]);
@@ -553,8 +585,13 @@ const AppContent: React.FC = () => {
   const pendingPrompts = useMemo(() => prompts.filter(p => !p.accepted), [prompts]);
   const myPrompts = useMemo(() => {
     const combined = [...prompts, ...myPendingPrompts];
-    // De-duplicate if needed (though prompts and myPendingPrompts shouldn't overlap)
-    return combined.filter(p => p.userId === user?.uid);
+    const uniqueMap = new Map<string, Prompt>();
+    combined.forEach(p => {
+      if (p.userId === user?.uid) {
+        uniqueMap.set(p.id, p);
+      }
+    });
+    return Array.from(uniqueMap.values());
   }, [prompts, myPendingPrompts, user]);
 
   const likedPrompts = useMemo(() => {
@@ -623,14 +660,14 @@ const AppContent: React.FC = () => {
     const newCount = logoClicks + 1;
     setLogoClicks(newCount);
     if (newCount >= 6) {
-      setStarPlacerActive(true);
+      setShowLogoSecretModal(true);
       setLogoClicks(0);
-      showMessage('Star Placer Activated! Click anywhere.');
     }
     setTimeout(() => setLogoClicks(0), 2000);
   };
 
   const handleConfettiClick = () => {
+    const isDesktop = window.innerWidth > 768;
     const corners = [
       { x: 0, y: 0 },
       { x: 1, y: 0 },
@@ -641,16 +678,36 @@ const AppContent: React.FC = () => {
     const randomCorner = corners[Math.floor(Math.random() * corners.length)];
     
     confetti({
-      particleCount: 150,
-      spread: 70,
+      particleCount: isDesktop ? 300 : 150,
+      spread: isDesktop ? 100 : 70,
       origin: randomCorner,
-      colors: ['#FF7B65', '#A46BF5', '#ffd9c8', '#ffffff']
+      colors: ['#FF7B65', '#A46BF5', '#ffd9c8', '#ffffff', '#FF5733', '#C70039']
     });
+    
+    if (isDesktop) {
+      // Add a secondary burst for desktop vibrancy
+      setTimeout(() => {
+        confetti({
+          particleCount: 150,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#FF7B65', '#A46BF5']
+        });
+        confetti({
+          particleCount: 150,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#FF7B65', '#A46BF5']
+        });
+      }, 200);
+    }
   };
 
   const placeStar = (e: React.MouseEvent) => {
     if (!starPlacerActive) return;
-    setStars([...stars, { x: e.clientX, y: e.clientY, id: Date.now() }]);
+    setStars(prev => [...prev, { x: e.clientX, y: e.clientY, id: Date.now() + Math.random() }]);
   };
 
   const handleTTTMove = (idx: number) => {
@@ -698,7 +755,7 @@ const AppContent: React.FC = () => {
           <nav className="hidden md:flex gap-3 items-center">
             <button onClick={() => setActiveModal(null)} className={`px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white ${!activeModal ? 'bg-[#FF7B65] text-white shadow-lg shadow-[#FF7B65]/20' : ''}`}>Home</button>
             <button onClick={() => setActiveModal('gallery')} className="px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white">Gallery</button>
-            <button onClick={() => setActiveModal('submit')} className="px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white">My Prompts</button>
+            <button onClick={handleOpenSubmit} className="px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white">My Prompts</button>
             <button onClick={() => setActiveModal('about')} className="px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white">About</button>
             {isAdmin && <button onClick={() => setActiveModal('admin')} className="px-3.5 py-2.5 rounded-xl font-semibold transition-all hover:bg-[#A46BF5] hover:text-white">Admin</button>}
             <button 
@@ -732,7 +789,7 @@ const AppContent: React.FC = () => {
 
           <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center items-center w-full max-w-[340px] sm:max-w-none mx-auto">
             <button 
-              onClick={() => setActiveModal('submit')}
+              onClick={handleOpenSubmit}
               className="w-full sm:w-auto bg-[#FF7B65] text-white px-8 py-2.5 sm:px-10 sm:py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-[0_8px_30px_rgba(255,123,101,0.18)] transition-all hover:bg-gradient-to-r hover:from-[#FF7B65] hover:to-[#A46BF5] hover:-translate-y-0.5 hover:shadow-[0_12px_35px_rgba(164,107,245,0.3)] text-base"
             >
               Submit Your Prompt <ArrowRight className="w-4 h-4" />
@@ -798,6 +855,7 @@ const AppContent: React.FC = () => {
 
       {/* Modals */}
       <ModalPage 
+        key="modal-gallery"
         isOpen={activeModal === 'gallery'} 
         onClose={() => setActiveModal(null)} 
         title="Gallery"
@@ -836,11 +894,12 @@ const AppContent: React.FC = () => {
         )}
       </ModalPage>
 
-            <ModalPage 
-              isOpen={activeModal === 'submit'} 
-              onClose={() => setActiveModal(null)} 
-              title="My Prompts"
-            >
+      <ModalPage 
+        key="modal-submit"
+        isOpen={activeModal === 'submit'} 
+        onClose={() => setActiveModal(null)} 
+        title="My Prompts"
+      >
               <div className="flex flex-wrap gap-5">
                 <div className="flex-1 min-w-[320px]">
                   <div className="bg-white p-5 rounded-2xl shadow-sm">
@@ -1026,10 +1085,29 @@ const AppContent: React.FC = () => {
               </div>
             </div>
           </div>
+          
+          {showRickQuestion && (
+            <div className="fixed bottom-10 right-10 z-[2000] flex flex-col items-center">
+               <button 
+                  onClick={(e) => { e.stopPropagation(); setShowRickQuestion(false); }}
+                  className="bg-red-500 text-white p-1.5 rounded-full absolute -top-3 -right-3 z-10 hover:bg-black shadow-lg transition-colors"
+                  title="Close Rick"
+               >
+                  <X className="w-4 h-4" />
+               </button>
+               <button 
+                  onClick={() => setShowRickPage(true)}
+                  className="w-16 h-16 bg-[#A46BF5] text-white rounded-full flex items-center justify-center shadow-[0_10px_30px_rgba(164,107,245,0.4)] hover:scale-110 transition-transform animate-bounce border-4 border-white"
+               >
+                  <HelpCircle className="w-9 h-9" />
+               </button>
+            </div>
+          )}
         </div>
       </ModalPage>
 
       <ModalPage 
+        key="modal-about"
         isOpen={activeModal === 'about'} 
         onClose={() => setActiveModal(null)} 
         title="About PromptBud"
@@ -1051,6 +1129,7 @@ const AppContent: React.FC = () => {
       </ModalPage>
 
       <ModalPage 
+        key="modal-terms"
         isOpen={activeModal === 'terms'} 
         onClose={() => setActiveModal(null)} 
         title="Terms & Conditions"
@@ -1095,6 +1174,7 @@ const AppContent: React.FC = () => {
       </ModalPage>
 
       <ModalPage 
+        key="modal-privacy"
         isOpen={activeModal === 'privacy'} 
         onClose={() => setActiveModal(null)} 
         title="Privacy Policy"
@@ -1152,6 +1232,7 @@ const AppContent: React.FC = () => {
 
       {isAdmin && (
         <ModalPage 
+          key="modal-admin"
           isOpen={activeModal === 'admin'} 
           onClose={() => setActiveModal(null)} 
           title="Admin Dashboard"
@@ -1201,9 +1282,10 @@ const AppContent: React.FC = () => {
       )}
 
       {/* Image Viewer */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {viewerImage && (
           <motion.div 
+            key="image-viewer-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1228,9 +1310,10 @@ const AppContent: React.FC = () => {
       </AnimatePresence>
 
       {/* Mobile Nav */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {mobileNavOpen && (
           <motion.div 
+            key="mobile-nav-panel"
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
@@ -1241,7 +1324,7 @@ const AppContent: React.FC = () => {
             </button>
             <button onClick={() => { setActiveModal(null); setMobileNavOpen(false); }} className="text-2xl font-bold">Home</button>
             <button onClick={() => { setActiveModal('gallery'); setMobileNavOpen(false); }} className="text-2xl font-bold">Gallery</button>
-            <button onClick={() => { setActiveModal('submit'); setMobileNavOpen(false); }} className="text-2xl font-bold">My Prompts</button>
+            <button onClick={() => { handleOpenSubmit(); setMobileNavOpen(false); }} className="text-2xl font-bold">My Prompts</button>
             <button onClick={() => { setActiveModal('about'); setMobileNavOpen(false); }} className="text-2xl font-bold">About</button>
             {isAdmin && <button onClick={() => { setActiveModal('admin'); setMobileNavOpen(false); }} className="text-2xl font-bold">Admin</button>}
             <button 
@@ -1256,11 +1339,61 @@ const AppContent: React.FC = () => {
 
       {/* Easter Egg Modals */}
       <AnimatePresence>
+        {showLogoSecretModal && (
+          <div className="fixed inset-0 z-[20000] flex items-center justify-center px-5">
+            <motion.div 
+              initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
+              exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setShowLogoSecretModal(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white p-8 rounded-[32px] shadow-2xl relative z-10 max-w-[500px] text-center border-4 border-[#FF7B65] overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#FF7B65] via-[#A46BF5] to-[#FF7B65]" />
+              <div className="bg-[#fff3f1] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <Star className="w-8 h-8 text-[#FF7B65] fill-[#FF7B65]" />
+              </div>
+              <h3 className="font-space text-3xl font-bold mb-4 text-[#333]">Logo Secrets Revealed!</h3>
+              <div className="space-y-4 text-muted leading-relaxed mb-8">
+                <p className="font-bold text-[#FF7B65]">Hmm... Looks like you're too interested in the logo.</p>
+                <p>Well, it's never just a Logo. Each corner represents one of the 5 members of Code Ronins who worked on this project.</p>
+                <p className="text-sm bg-gray-50 p-4 rounded-xl border border-dashed border-gray-200">
+                  Now you can place stars anywhere on the page! Click anywhere to place a star, and <span className="font-bold text-[#A46BF5]">drag it</span> to move it around.
+                </p>
+              </div>
+              <button 
+                onClick={() => {
+                  setShowLogoSecretModal(false);
+                  setStarPlacerActive(true);
+                  showMessage('Star Placer Activated! Enjoy placing ⭐');
+                }}
+                className="w-full bg-[#FF7B65] text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-[#A46BF5] transition-all hover:scale-[1.02] active:scale-95"
+              >
+                Got It
+              </button>
+            </motion.div>
+          </div>
+        )}
+
         {stars.map(star => (
-          <div key={star.id} className="fixed text-3xl pointer-events-none z-[9998]" style={{ left: star.x, top: star.y }}>⭐</div>
+          <motion.div 
+            drag
+            dragMomentum={false}
+            key={`star-${star.id}`} 
+            className="fixed text-3xl z-[9998] cursor-move select-none touch-none" 
+            style={{ left: star.x - 15, top: star.y - 15 }}
+          >
+            ⭐
+          </motion.div>
         ))}
         {starPlacerActive && (
           <button 
+            key="clear-stars-btn"
             onClick={(e) => { e.stopPropagation(); setStarPlacerActive(false); setStars([]); }}
             className="fixed bottom-5 right-5 bg-orange-500 text-white p-3 rounded-xl font-bold z-[9999]"
           >
@@ -1272,6 +1405,7 @@ const AppContent: React.FC = () => {
       <AnimatePresence>
         {isBookUnlocked && (
           <motion.div 
+            key="secret-book-trigger"
             initial={{ opacity: 0, scale: 0.5, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.5, y: 20 }}
@@ -1295,6 +1429,7 @@ const AppContent: React.FC = () => {
 
         {isConfettiUnlocked && (
           <motion.div 
+            key="confetti-trigger"
             initial={{ opacity: 0, scale: 0.5, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.5, y: 20 }}
@@ -1311,8 +1446,29 @@ const AppContent: React.FC = () => {
               className="bg-white p-3 rounded-full shadow-xl cursor-pointer hover:scale-110 transition-transform border border-[#A46BF5]" 
               onClick={handleConfettiClick}
             >
-              <Plus className="w-8 h-8 text-[#A46BF5]" />
+              <PartyPopper className="w-8 h-8 text-[#A46BF5]" />
             </div>
+          </motion.div>
+        )}
+
+        {showConfettiMessage && (
+          <motion.div 
+            key="confetti-random-message"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className="fixed bottom-24 right-5 z-[9999] bg-white p-4 rounded-2xl shadow-2xl border-2 border-[#A46BF5] flex items-center gap-3"
+          >
+            <div className="bg-[#A46BF5]/10 p-2 rounded-lg">
+              <PartyPopper className="w-5 h-5 text-[#A46BF5]" />
+            </div>
+            <p className="text-sm font-bold text-[#333]">We love adding Random Stuff :) - CR</p>
+            <button 
+              onClick={() => setShowConfettiMessage(false)}
+              className="ml-2 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-4 h-4 text-muted" />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1320,6 +1476,7 @@ const AppContent: React.FC = () => {
       <AnimatePresence>
         {showTTT && (
           <motion.div 
+            key="ttt-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -1353,6 +1510,7 @@ const AppContent: React.FC = () => {
       <AnimatePresence>
         {showScrollTop && (
           <motion.button 
+            key="scroll-top-btn"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
@@ -1361,6 +1519,47 @@ const AppContent: React.FC = () => {
           >
             <ArrowRight className="w-6 h-6 -rotate-90" />
           </motion.button>
+        )}
+
+        {showRickPage && (
+          <motion.div 
+            key="rickroll-page"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="fixed inset-0 z-[20001] bg-[#fffcfb] flex items-center justify-center p-5"
+          >
+            <div className="max-w-[500px] w-full bg-white rounded-[40px] p-8 md:p-10 shadow-2xl border-4 border-[#A46BF5] text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-2 bg-[#A46BF5]" />
+              <button 
+                onClick={() => setShowRickPage(false)}
+                className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full hover:bg-red-500 hover:text-white transition-all z-10"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              
+              <div className="mb-6 overflow-hidden rounded-3xl shadow-lg aspect-square bg-[#fff3f1]">
+                <img 
+                  src={RICK_IMAGE} 
+                  alt="Rick Bud" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+
+              <h2 className="font-space text-2xl font-bold text-[#333] mb-4 uppercase tracking-wider">Rick Rolled!</h2>
+              <p className="text-lg font-bold text-[#FF7B65] mb-8 leading-relaxed">
+                "Well, efforts never get wasted, Atleast you got Rick Rolled"
+              </p>
+              
+              <button 
+                onClick={() => setShowRickPage(false)}
+                className="w-full bg-[#A46BF5] text-white py-4 rounded-2xl font-bold text-lg hover:bg-[#FF7B65] transition-all shadow-lg hover:translate-y-[-2px] active:translate-y-[0px]"
+              >
+                CLOSE EGG
+              </button>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
