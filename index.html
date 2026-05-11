@@ -3,7 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PB-Release_Candidate | V-26w20a</title>
+    <title>PB-Release_Candidate | Version: 26w20a</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FF7B65" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service worker registered.', reg))
+            .catch(err => console.log('Service worker registration failed.', err));
+        });
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
