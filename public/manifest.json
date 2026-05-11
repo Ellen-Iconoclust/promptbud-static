@@ -1,0 +1,17 @@
+{
+  "name": "PromptBud",
+  "short_name": "PromptBud",
+  "description": "The ultimate platform for discovering, sharing, and managing creative AI prompts.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF7B65",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2103/2103633.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
